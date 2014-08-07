@@ -1,0 +1,7 @@
+---
+path: github.com/mediocregopher/breadis
+deps:
+    - loc: https://github.com/stvp/resp.git
+      type: git
+      ref: a3da1b5
+      path: github.com/stvp/resp
