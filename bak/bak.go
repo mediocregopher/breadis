@@ -16,6 +16,7 @@ var (
 
 // <CONFIG STUFF>
 var initialBuckets = []string{
+	"locator",
 	"bucket0",
 }
 const (
@@ -28,6 +29,8 @@ const (
 
 func init() {
 	var err error
+	var locConn *redis.Client
+
 	sentinelConn, err = redis.Dial("tcp", SENTINEL_ADDR)
 	if err != nil {
 		log.Fatal(err)
@@ -40,7 +43,7 @@ func init() {
 		initialBuckets...
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("sentinel.NewClient", err)
 	}
 
 	bis := make([]interface{}, 0, len(initialBuckets)+1)
@@ -48,7 +51,12 @@ func init() {
 	for i := range bis {
 		bis = append(bis, initialBuckets[i])
 	}
-	_, err = sentinelConn.Cmd("SADD", bis...).Int()
+
+	if locConn, err = sentinelClient.GetMaster(LOCATOR_NAME); err != nil {
+		log.Fatal("sentinelClient.GetMaster", err)
+	}
+
+	_, err = locConn.Cmd("SADD", bis...).Int()
 	if err != nil {
 		log.Fatal(err)
 	}

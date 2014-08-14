@@ -6,4 +6,5 @@ import (
 
 func main() {
 	srv.Listen()
+	select {}
 }

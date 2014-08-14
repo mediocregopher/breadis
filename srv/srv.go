@@ -23,12 +23,13 @@ var (
 func Listen() {
 	ln, err := net.Listen("tcp", ":8080")
 	if err != nil {
-		// handle error
+		log.Fatal(err)
 	}
+	log.Println("Listening")
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
-			// handle error
+			log.Printf("Accept: %s", err)
 			continue
 		}
 		go handleConnection(conn)
@@ -71,23 +72,24 @@ func handleCommand(conn net.Conn, m *resp.Message) {
 	var err error
 	var ms []*resp.Message
 	var key, bucket string
-	var cmd []interface{}
 	var rconn *redis.Client
+	var rm *resp.Message
+
+	// We don't bother testing for errors when writing to the connection because
+	// if the connection truly fails then we'll handle the error when we go to
+	// read again
+
 	ms, err = m.Array()
 	if err != nil || len(ms) < 2 || ms[1].Type != resp.BulkStr {
 		resp.WriteArbitrary(conn, errBadCmd)
 		return
 	}
 
-	for i := range ms {
-		cmd[i], err = ms[i].Str()
-		if err != nil {
-			resp.WriteArbitrary(conn, errBadCmd)
-			return
-		}
+	key, err = ms[1].Str()
+	if err != nil {
+		resp.WriteArbitrary(conn, errBadCmd)
+		return
 	}
-
-	key = cmd[1].(string)
 
 	bucket, err = bak.BucketForKey(key)
 	if err != nil {
@@ -103,26 +105,20 @@ func handleCommand(conn net.Conn, m *resp.Message) {
 		return
 	}
 
-	
-}
-
-func forwardCommand(
-	// TODO Pass in the message itself instead of cmd. We would need to allow
-	// for getting the raw connection out of the redis client. Shouldn't be too
-	// difficult. DO THIS NOW YOU MUST DO IT THERE IS NO CHOICE
-	conn net.Conn, rconn *redis.Client, cmd []interface{},
-) (
-	*resp.Message, bool,
-) {
-	var err error
-	var r *redis.Reply
-
-	r = rconn.Cmd(cmd[0].(string), cmd[1:]...)
-	if r.Type == redis.ErrorReply {
-		if r.Err.Error()[:3] == "ERR" {
-			return r, true
-		} else {
-			r.Err = errBackend
-		}
+	err = resp.WriteMessage(rconn.Conn, m)
+	if err != nil {
+		log.Printf("WriteMessage(rconn, m): %s", err)
+		resp.WriteArbitrary(conn, errBackend)
+		return
 	}
+
+	rm, err = resp.ReadMessage(rconn.Conn)
+	if err != nil {
+		log.Printf("ReadMessage(rconn): %s", err)
+		resp.WriteArbitrary(conn, errBackend)
+		return
+	}
+
+	resp.WriteMessage(conn, rm)
+	bak.PutBucket(bucket, rconn)
 }

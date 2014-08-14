@@ -1,4 +1,7 @@
 ---
 path: github.com/mediocregopher/breadis
 deps:
-    - loc: github.com/fzzy/radix
+    - loc: https://github.com/fzzy/radix.git
+      type: git
+      ref: v0.4.3
+      path: github.com/fzzy/radix
