@@ -24,9 +24,6 @@ func init() {
 		log.Fatal(err)
 	}
 
-	// TODO Initial Buckets should indicate which buckets to add to the pool
-	// automatically, the buckets to actually have connections to should be
-	// automatically determined and kept up-to-date
 	initialBuckets := []string{config.LocatorName}
 	initialBuckets = append(initialBuckets, config.Buckets...)
 
@@ -63,8 +60,6 @@ func GetBucket(bucket string) (*redis.Client, error) {
 func PutBucket(bucket string, conn *redis.Client) {
 	sentinelClient.PutMaster(bucket, conn)
 }
-
-// TODO locator stuff should be broken out into its own package
 
 func BucketForKey(key string) (string, error) {
 	if key[len(key)-1] == '}' {
