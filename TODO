@@ -1,3 +1,4 @@
 * Make bak fetch list of buckets and keep that up-to-date automatically
 * Use gslog
 * single-mode
+* Cache
