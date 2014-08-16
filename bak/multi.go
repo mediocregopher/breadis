@@ -17,19 +17,17 @@ func multiinit() {
 		return
 	}
 
-	log.Infof("Adding buckets to pool: %v", config.Buckets)
-
-	bis := make([]interface{}, 0, len(config.Buckets)+1)
-	bis = append(bis, config.LocatorSet)
-	for i := range config.Buckets {
-		bis = append(bis, config.Buckets[i])
-	}
-
 	locConn, err := (<-sentinelClientCh).GetMaster(config.LocatorName)
 	if err != nil {
 		log.Fatal("sentinelClient.GetMaster", err)
 	}
 
+	log.Infof("Adding buckets to pool: %v", config.Buckets)
+	bis := make([]interface{}, 0, len(config.Buckets)+1)
+	bis = append(bis, config.LocatorSet)
+	for i := range config.Buckets {
+		bis = append(bis, config.Buckets[i])
+	}
 	_, err = locConn.Cmd("SADD", bis...).Int()
 	if err != nil {
 		log.Fatalf("SADD buckets: %s", err)

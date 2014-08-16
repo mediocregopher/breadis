@@ -1,6 +1,7 @@
 package loc
 
 import (
+	"errors"
 	"github.com/fzzy/radix/redis"
 	"io"
 	"strings"
@@ -18,9 +19,19 @@ func BucketForKey(key string) (string, error) {
 			key = key[i+1:len(key)-1]
 		}
 	}
-	key = config.LocatorPrefix + key
 
-	return bucketForKeyRaw(key)
+	loc := getFromCache(key)
+	if loc != "" {
+		return loc, nil
+	}
+
+	prefixedKey := config.LocatorPrefix + key
+	loc, err := bucketForKeyRaw(prefixedKey)
+	if err != nil {
+		return "", err
+	}
+	setInCache(key, loc)
+	return loc, nil
 }
 
 func tryReturnConn(bucket string, conn *redis.Client, err *error) {
@@ -48,7 +59,11 @@ func bucketForKeyRaw(key string) (string, error) {
 	}
 
 	// we only get here if the key doesn't have a bucket assigned to it yet
-	bucket, err = conn.Cmd("SRANDMEMBER", config.LocatorName).Str()
+	r = conn.Cmd("SRANDMEMBER", config.LocatorSet)
+	if r.Type == redis.NilReply {
+		return "", errors.New("No buckets in pool")
+	}
+	bucket, err = r.Str()
 	if err != nil {
 		return "", err
 	}

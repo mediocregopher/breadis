@@ -20,6 +20,7 @@ var (
 	LocatorSet    string
 	LocatorPrefix string
 	Buckets       []string
+	CacheSize     int
 )
 
 func init() {
@@ -73,6 +74,11 @@ func init() {
 		"bucket-name",
 		"(Multi mode) Names of the buckets in sentinel to seed the pool with on breadis startup. Leave unspecified to always do it manually, specify multiple times for multiple buckets",
 	)
+	fc.IntParam(
+		"cache-size",
+		"(Multi mode) Number of keys to keep cached in memory, to reduce round trips to the locator instance. Set to 0 for no cache",
+		4096,
+	)
 	if err := fc.Parse(); err != nil {
 		log.Fatalf("FlagConfig.parse(): %s", err)
 	}
@@ -86,6 +92,7 @@ func init() {
 	LocatorSet = fc.GetStr("locator-set-name")
 	LocatorPrefix = fc.GetStr("locator-prefix")
 	Buckets = fc.GetStrs("bucket-name")
+	CacheSize = fc.GetInt("cache-size")
 
 	// We do this here so that it happens before anything else can have a chance
 	// to log anything.
