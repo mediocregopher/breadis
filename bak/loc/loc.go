@@ -10,6 +10,9 @@ import (
 )
 
 func BucketForKey(key string) (string, error) {
+	if config.SingleMode {
+		return config.SingleBucket, nil
+	}
 	if key[len(key)-1] == '}' {
 		if i := strings.Index(key, "{"); i > -1 {
 			key = key[i+1:len(key)-1]
