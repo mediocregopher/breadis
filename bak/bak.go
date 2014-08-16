@@ -3,10 +3,11 @@ package bak
 import (
 	"github.com/fzzy/radix/extra/sentinel"
 	"github.com/fzzy/radix/redis"
-	//"github.com/fzzy/radix/redis/resp"
 	"io"
 	"log"
 	"strings"
+
+	"github.com/mediocregopher/breadis/config"
 )
 
 var (
@@ -14,45 +15,38 @@ var (
 	sentinelClient *sentinel.Client
 )
 
-// <CONFIG STUFF>
-var initialBuckets = []string{
-	"locator",
-	"bucket0",
-}
-const (
-	SENTINEL_ADDR = "localhost:26379"
-	LOCATOR_NAME = "locator"
-	LOCATOR_SET = "members"
-	LOCATOR_PREFIX = "loc:"
-)
-// </CONFIG STUFF>
-
 func init() {
 	var err error
 	var locConn *redis.Client
 
-	sentinelConn, err = redis.Dial("tcp", SENTINEL_ADDR)
+	sentinelConn, err = redis.Dial("tcp", config.SentinelAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// TODO Initial Buckets should indicate which buckets to add to the pool
+	// automatically, the buckets to actually have connections to should be
+	// automatically determined and kept up-to-date
+	initialBuckets := []string{config.LocatorName}
+	initialBuckets = append(initialBuckets, config.Buckets...)
+
 	sentinelClient, err = sentinel.NewClient(
 		"tcp",
-		SENTINEL_ADDR,
+		config.SentinelAddr,
 		10,
-		initialBuckets...
+		initialBuckets...,
 	)
 	if err != nil {
 		log.Fatal("sentinel.NewClient", err)
 	}
 
 	bis := make([]interface{}, 0, len(initialBuckets)+1)
-	bis = append(bis, LOCATOR_SET)
+	bis = append(bis, config.LocatorSet)
 	for i := range bis {
 		bis = append(bis, initialBuckets[i])
 	}
 
-	if locConn, err = sentinelClient.GetMaster(LOCATOR_NAME); err != nil {
+	if locConn, err = sentinelClient.GetMaster(config.LocatorName); err != nil {
 		log.Fatal("sentinelClient.GetMaster", err)
 	}
 
@@ -78,7 +72,7 @@ func BucketForKey(key string) (string, error) {
 			key = key[i+1:len(key)-1]
 		}
 	}
-	key = LOCATOR_PREFIX + key
+	key = config.LocatorPrefix + key
 
 	return bucketForKeyRaw(key)
 }
@@ -94,11 +88,11 @@ func bucketForKeyRaw(key string) (string, error) {
 	var conn *redis.Client
 	var err error
 	var bucket string
-	conn, err = GetBucket(LOCATOR_NAME)
+	conn, err = GetBucket(config.LocatorName)
 	if err != nil {
 		return "", err
 	}
-	defer tryReturnConn(LOCATOR_NAME, conn, &err)
+	defer tryReturnConn(config.LocatorName, conn, &err)
 
 	r := conn.Cmd("GET", key)
 	if r.Type == redis.ErrorReply {
@@ -108,7 +102,7 @@ func bucketForKeyRaw(key string) (string, error) {
 	}
 
 	// we only get here if the key doesn't have a bucket assigned to it yet
-	bucket, err = conn.Cmd("SRANDMEMBER", LOCATOR_SET).Str()
+	bucket, err = conn.Cmd("SRANDMEMBER", config.LocatorName).Str()
 	if err != nil {
 		return "", err
 	}

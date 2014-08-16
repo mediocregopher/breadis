@@ -10,6 +10,7 @@ import (
 	"time"
 	
 	"github.com/mediocregopher/breadis/bak"
+	"github.com/mediocregopher/breadis/config"
 )
 
 // errors
@@ -21,11 +22,11 @@ var (
 
 
 func Listen() {
-	ln, err := net.Listen("tcp", ":8080")
+	ln, err := net.Listen("tcp", config.ListenAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Listening")
+	log.Printf("Listening on %s", config.ListenAddr)
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
