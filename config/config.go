@@ -2,7 +2,7 @@ package config
 
 import (
 	"github.com/mediocregopher/flagconfig"
-	"log"
+	log "github.com/grooveshark/golib/gslog"
 )
 
 var (
@@ -15,6 +15,8 @@ var (
 	SentinelAddr string
 	Buckets      []string
 	PoolSize     int
+
+	LogLevel     string
 )
 
 func init() {
@@ -53,8 +55,13 @@ func init() {
 		"Number of connections per bucket/locator to use as an initial pool size",
 		10,
 	)
+	fc.StrParam(
+		"log-level",
+		"Minimum level of severity to log to stderr (debug, info, warn, error, fatal)",
+		"info",
+	)
 	if err := fc.Parse(); err != nil {
-		log.Fatal(err)
+		log.Fatalf("FlagConfig.parse(): %s", err)
 	}
 	ListenAddr = fc.GetStr("listen-addr")
 	LocatorName = fc.GetStr("locator-master-name")
@@ -63,4 +70,12 @@ func init() {
 	SentinelAddr = fc.GetStr("sentinel-addr")
 	Buckets = fc.GetStrs("bucket-name")
 	PoolSize = fc.GetInt("conn-pool-size")
+	LogLevel = fc.GetStr("log-level")
+
+	// We do this here so that it happens before anything else can have a chance
+	// to log anything.
+	if err := log.SetMinimumLevel(LogLevel); err != nil {
+		log.Fatalf("log.SetMinimumLevel(%s): %s", LogLevel, err)
+	}
+	log.Info("Log level set to: %s", LogLevel)
 }

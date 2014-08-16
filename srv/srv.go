@@ -5,7 +5,7 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/fzzy/radix/redis/resp"
 	"io"
-	"log"
+	log "github.com/grooveshark/golib/gslog"
 	"net"
 	"time"
 	
@@ -25,13 +25,13 @@ var (
 func Listen() {
 	ln, err := net.Listen("tcp", config.ListenAddr)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Listening on %s: %s", config.ListenAddr,  err)
 	}
-	log.Printf("Listening on %s", config.ListenAddr)
+	log.Infof("Listening on %s", config.ListenAddr)
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
-			log.Printf("Accept: %s", err)
+			log.Warnf("Accept: %s", err)
 			continue
 		}
 		go handleConnection(conn)
@@ -40,21 +40,21 @@ func Listen() {
 
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
-	log.Println("got connection")
+	log.Debug("got connection")
 
 	var m *resp.Message
 	var err error
 	for {
 		err = conn.SetReadDeadline(time.Now().Add(1 * time.Second))
 		if err != nil {
-			log.Println("error setting read deadline")
+			log.Warn("error setting read deadline")
 			conn.Close()
 			return
 		}
 
 		m, err = resp.ReadMessage(conn)
 		if err == io.EOF {
-			log.Println("connection closed")
+			log.Debug("connection closed")
 			return
 		} else if t, ok := err.(*net.OpError); ok && t.Timeout() {
 			continue;
@@ -81,6 +81,8 @@ func handleCommand(conn net.Conn, m *resp.Message) {
 	// if the connection truly fails then we'll handle the error when we go to
 	// read again
 
+	log.Debug("handleCommand")
+
 	ms, err = m.Array()
 	if err != nil || len(ms) < 2 || ms[1].Type != resp.BulkStr {
 		resp.WriteArbitrary(conn, errBadCmd)
@@ -95,28 +97,28 @@ func handleCommand(conn net.Conn, m *resp.Message) {
 
 	bucket, err = loc.BucketForKey(key)
 	if err != nil {
-		log.Printf("BucketForKey(%s): %s", key, err)
+		log.Errorf("BucketForKey(%s): %s", key, err)
 		resp.WriteArbitrary(conn, errBackend)
 		return
 	}
 
 	rconn, err = bak.GetBucket(bucket)
 	if err != nil {
-		log.Printf("GetBucket(%s): %s", bucket, err)
+		log.Errorf("GetBucket(%s): %s", bucket, err)
 		resp.WriteArbitrary(conn, errBackend)
 		return
 	}
 
 	err = resp.WriteMessage(rconn.Conn, m)
 	if err != nil {
-		log.Printf("WriteMessage(rconn, m): %s", err)
+		log.Errorf("WriteMessage(rconn, m): %s", err)
 		resp.WriteArbitrary(conn, errBackend)
 		return
 	}
 
 	rm, err = resp.ReadMessage(rconn.Conn)
 	if err != nil {
-		log.Printf("ReadMessage(rconn): %s", err)
+		log.Errorf("ReadMessage(rconn): %s", err)
 		resp.WriteArbitrary(conn, errBackend)
 		return
 	}

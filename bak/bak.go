@@ -3,7 +3,7 @@ package bak
 import (
 	"github.com/fzzy/radix/extra/sentinel"
 	"github.com/fzzy/radix/redis"
-	"log"
+	log "github.com/grooveshark/golib/gslog"
 	"reflect"
 	"time"
 
@@ -19,7 +19,7 @@ func init() {
 		return
 	}
 
-	log.Println("Adding buckets to pool:", config.Buckets)
+	log.Infof("Adding buckets to pool: %v", config.Buckets)
 
 	bis := make([]interface{}, 0, len(config.Buckets)+1)
 	bis = append(bis, config.LocatorSet)
@@ -34,19 +34,19 @@ func init() {
 
 	_, err = locConn.Cmd("SADD", bis...).Int()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("SADD buckets: %s", err)
 	}
 }
 
 func forit() {
 	sentinelConn, err := redis.Dial("tcp", config.SentinelAddr)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Dial sentinelConn at %s: %s", config.SentinelAddr, err)
 	}
 
 	allBuckets, err := getBucketList(sentinelConn)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("getBucketList: %s", err)
 	}
 
 	bucketHash := map[string]bool{}
@@ -63,7 +63,7 @@ func forit() {
 	if err != nil {
 		log.Fatal("sentinel.NewClient", err)
 	}
-	log.Println("Connected to sentinel buckets:", allBuckets)
+	log.Infof("Connected to sentinel buckets: %v", allBuckets)
 
 	tick := time.Tick(10 * time.Second)
 	for {
@@ -72,7 +72,7 @@ func forit() {
 		case <-tick:
 			allBuckets, err = getBucketList(sentinelConn)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatalf("getBucketList: %s", err)
 			}
 			newBucketHash := map[string]bool{}
 			for i := range allBuckets {

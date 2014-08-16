@@ -10,3 +10,5 @@ deps:
       type: git
       ref: v0.4.2
       path: github.com/mediocregopher/flagconfig
+
+    - loc: github.com/grooveshark/golib
