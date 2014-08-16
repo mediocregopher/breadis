@@ -45,8 +45,8 @@ func init() {
 		"127.0.0.1:26379",
 	)
 	fc.StrParams(
-		"bucket-names",
-		"Names of the buckets in sentinel to seed the pool with on breadis startup. Leave unspecified to always do it manually",
+		"bucket-name",
+		"Names of the buckets in sentinel to seed the pool with on breadis startup. Leave unspecified to always do it manually, specify multiple times for multiple buckets",
 	)
 	fc.IntParam(
 		"conn-pool-size",
@@ -61,6 +61,6 @@ func init() {
 	LocatorSet = fc.GetStr("locator-set-name")
 	LocatorPrefix = fc.GetStr("locator-prefix")
 	SentinelAddr = fc.GetStr("sentinel-addr")
-	Buckets = fc.GetStrs("bucket-names")
+	Buckets = fc.GetStrs("bucket-name")
 	PoolSize = fc.GetInt("conn-pool-size")
 }
