@@ -10,6 +10,7 @@ import (
 	"time"
 	
 	"github.com/mediocregopher/breadis/bak"
+	"github.com/mediocregopher/breadis/bak/loc"
 	"github.com/mediocregopher/breadis/config"
 )
 
@@ -92,7 +93,7 @@ func handleCommand(conn net.Conn, m *resp.Message) {
 		return
 	}
 
-	bucket, err = bak.BucketForKey(key)
+	bucket, err = loc.BucketForKey(key)
 	if err != nil {
 		log.Printf("BucketForKey(%s): %s", key, err)
 		resp.WriteArbitrary(conn, errBackend)

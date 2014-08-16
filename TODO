@@ -1,4 +1,3 @@
 * Make bak fetch list of buckets and keep that up-to-date automatically
-* Break locator stuff into its own package
 * Use gslog
 * single-mode
