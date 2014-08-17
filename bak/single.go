@@ -2,6 +2,7 @@ package bak
 
 import (
 	"github.com/fzzy/radix/extra/sentinel"
+	"github.com/fzzy/radix/redis"
 	log "github.com/grooveshark/golib/gslog"
 
 	"github.com/mediocregopher/breadis/config"
@@ -23,8 +24,17 @@ func singleinit() {
 			log.Fatalf("sentinel.NewClient: %s", err)
 		}
 
+		sentinelConn, err := redis.Dial("tcp", config.SentinelAddr)
+		if err != nil {
+			log.Fatalf("Dial sentinelConn at %s: %s", config.SentinelAddr, err)
+		}
+
 		for {
-			sentinelClientCh <- sentinelClient
+			select {
+			case sentinelClientCh <- sentinelClient:
+			case r := <-sentinelReqCh:
+				sentinelDirect(sentinelConn, r)
+			}
 		}
 	}()
 }

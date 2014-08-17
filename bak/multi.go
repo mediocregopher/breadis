@@ -65,6 +65,8 @@ func forit() {
 	for {
 		select {
 		case sentinelClientCh <- sentinelClient:
+		case r := <-sentinelReqCh:
+			sentinelDirect(sentinelConn, r)
 		case <-tick:
 			allBuckets, err = getBucketList(sentinelConn)
 			if err != nil {

@@ -7,6 +7,7 @@ import (
 	"io"
 	log "github.com/grooveshark/golib/gslog"
 	"net"
+	"strings"
 	"time"
 	
 	"github.com/mediocregopher/breadis/bak"
@@ -73,8 +74,7 @@ func handleConnection(conn net.Conn) {
 func handleCommand(conn net.Conn, m *resp.Message) {
 	var err error
 	var ms []*resp.Message
-	var key, bucket string
-	var rconn *redis.Client
+	var cmd, key string
 	var rm *resp.Message
 
 	// We don't bother testing for errors when writing to the connection because
@@ -88,6 +88,11 @@ func handleCommand(conn net.Conn, m *resp.Message) {
 		resp.WriteArbitrary(conn, errBadCmd)
 		return
 	}
+cmd, err = ms[0].Str()
+	if err != nil {
+		resp.WriteArbitrary(conn, errBadCmd)
+		return
+	}
 
 	key, err = ms[1].Str()
 	if err != nil {
@@ -95,34 +100,53 @@ func handleCommand(conn net.Conn, m *resp.Message) {
 		return
 	}
 
+	if (cmd[0] == 's' || cmd[0] == 'S') && strings.ToLower(cmd) == "sentinel" {
+		rm = bak.SentinelDirectCmd(m)
+	} else {
+		rm, err = bucketCommand(conn, key, m)
+	}
+
+	if err != nil {
+		resp.WriteArbitrary(conn, err)
+	} else {
+		resp.WriteMessage(conn, rm)
+	}
+}
+
+func bucketCommand(
+	conn net.Conn, key string, m *resp.Message,
+) (
+	*resp.Message, error,
+) {
+	var bucket string
+	var err error
+	var rconn *redis.Client
+	var rm *resp.Message
+
 	bucket, err = loc.BucketForKey(key)
 	if err != nil {
 		log.Errorf("BucketForKey(%s): %s", key, err)
-		resp.WriteArbitrary(conn, errBackend)
-		return
+		return nil, errBackend
 	}
 
 	rconn, err = bak.GetBucket(bucket)
 	if err != nil {
 		log.Errorf("GetBucket(%s): %s", bucket, err)
-		resp.WriteArbitrary(conn, errBackend)
-		return
+		return nil, errBackend
 	}
 
 	err = resp.WriteMessage(rconn.Conn, m)
 	if err != nil {
 		log.Errorf("WriteMessage(rconn, m): %s", err)
-		resp.WriteArbitrary(conn, errBackend)
-		return
+		return nil, errBackend
 	}
 
 	rm, err = resp.ReadMessage(rconn.Conn)
 	if err != nil {
 		log.Errorf("ReadMessage(rconn): %s", err)
-		resp.WriteArbitrary(conn, errBackend)
-		return
+		return nil, errBackend
 	}
 
-	resp.WriteMessage(conn, rm)
 	bak.PutBucket(bucket, rconn)
+	return rm, nil
 }
