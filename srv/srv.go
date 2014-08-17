@@ -4,12 +4,12 @@ import (
 	"errors"
 	"github.com/fzzy/radix/redis"
 	"github.com/fzzy/radix/redis/resp"
-	"io"
 	log "github.com/grooveshark/golib/gslog"
+	"io"
 	"net"
 	"strings"
 	"time"
-	
+
 	"github.com/mediocregopher/breadis/bak"
 	"github.com/mediocregopher/breadis/bak/loc"
 	"github.com/mediocregopher/breadis/config"
@@ -22,11 +22,10 @@ var (
 	errBackend = errors.New("ERR backend error")
 )
 
-
 func Listen() {
 	ln, err := net.Listen("tcp", config.ListenAddr)
 	if err != nil {
-		log.Fatalf("Listening on %s: %s", config.ListenAddr,  err)
+		log.Fatalf("Listening on %s: %s", config.ListenAddr, err)
 	}
 	log.Infof("Listening on %s", config.ListenAddr)
 	for {
@@ -58,8 +57,8 @@ func handleConnection(conn net.Conn) {
 			log.Debug("connection closed")
 			return
 		} else if t, ok := err.(*net.OpError); ok && t.Timeout() {
-			continue;
-		}  else if err != nil {
+			continue
+		} else if err != nil {
 			// If this fails the connection read will fail on the next loop so
 			// no need to check here
 			resp.WriteArbitrary(conn, errUnkCmd)
@@ -88,7 +87,7 @@ func handleCommand(conn net.Conn, m *resp.Message) {
 		resp.WriteArbitrary(conn, errBadCmd)
 		return
 	}
-cmd, err = ms[0].Str()
+	cmd, err = ms[0].Str()
 	if err != nil {
 		resp.WriteArbitrary(conn, errBadCmd)
 		return

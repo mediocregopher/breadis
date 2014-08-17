@@ -2,8 +2,8 @@ package bak
 
 import (
 	"github.com/fzzy/radix/extra/sentinel"
-	"github.com/fzzy/radix/redis/resp"
 	"github.com/fzzy/radix/redis"
+	"github.com/fzzy/radix/redis/resp"
 	log "github.com/grooveshark/golib/gslog"
 	"strings"
 
@@ -11,8 +11,8 @@ import (
 )
 
 type sentinelReq struct {
-	m    *resp.Message
-	ch   chan *resp.Message
+	m  *resp.Message
+	ch chan *resp.Message
 }
 
 var (
@@ -45,7 +45,7 @@ func sentinelDirect(conn *redis.Client, r *sentinelReq) {
 	}
 	rm, err := resp.ReadMessage(conn.Conn)
 	if err != nil {
-		log.Fatal("sentinelConn read: %s", err)
+		log.Fatalf("sentinelConn read: %s", err)
 	}
 	r.ch <- rm
 }

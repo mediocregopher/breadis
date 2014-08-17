@@ -1,8 +1,8 @@
 package config
 
 import (
-	"github.com/mediocregopher/flagconfig"
 	log "github.com/grooveshark/golib/gslog"
+	"github.com/mediocregopher/flagconfig"
 	"strings"
 )
 

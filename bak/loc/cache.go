@@ -69,7 +69,7 @@ func cacheSpin() {
 			}
 			ms := minStack{}
 			for k, ent := range cache {
-				ms.add(k, ent.hits, len(cache) - config.CacheSize)
+				ms.add(k, ent.hits, len(cache)-config.CacheSize)
 			}
 			for k := range ms {
 				log.Debug("Deleting %s from cache", k)

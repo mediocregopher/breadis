@@ -16,7 +16,7 @@ func BucketForKey(key string) (string, error) {
 	}
 	if key[len(key)-1] == '}' {
 		if i := strings.Index(key, "{"); i > -1 {
-			key = key[i+1:len(key)-1]
+			key = key[i+1 : len(key)-1]
 		}
 	}
 
@@ -54,7 +54,7 @@ func bucketForKeyRaw(key string) (string, error) {
 	r := conn.Cmd("GET", key)
 	if r.Type == redis.ErrorReply {
 		return "", r.Err
-	} else if r.Type == redis.BulkReply  {
+	} else if r.Type == redis.BulkReply {
 		return r.Str()
 	}
 
