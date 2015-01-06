@@ -1,9 +1,10 @@
 package config
 
 import (
+	"strings"
+
 	log "github.com/grooveshark/golib/gslog"
 	"github.com/mediocregopher/flagconfig"
-	"strings"
 )
 
 var (

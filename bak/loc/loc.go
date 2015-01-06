@@ -2,9 +2,10 @@ package loc
 
 import (
 	"errors"
-	"github.com/fzzy/radix/redis"
 	"io"
 	"strings"
+
+	"github.com/fzzy/radix/redis"
 
 	"github.com/mediocregopher/breadis/bak"
 	"github.com/mediocregopher/breadis/config"

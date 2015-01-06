@@ -2,13 +2,14 @@ package srv
 
 import (
 	"errors"
-	"github.com/fzzy/radix/redis"
-	"github.com/fzzy/radix/redis/resp"
-	log "github.com/grooveshark/golib/gslog"
 	"io"
 	"net"
 	"strings"
 	"time"
+
+	"github.com/fzzy/radix/redis"
+	"github.com/fzzy/radix/redis/resp"
+	log "github.com/grooveshark/golib/gslog"
 
 	"github.com/mediocregopher/breadis/bak"
 	"github.com/mediocregopher/breadis/bak/loc"

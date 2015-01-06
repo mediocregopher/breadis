@@ -1,11 +1,12 @@
 package bak
 
 import (
+	"reflect"
+	"time"
+
 	"github.com/fzzy/radix/extra/sentinel"
 	"github.com/fzzy/radix/redis"
 	log "github.com/grooveshark/golib/gslog"
-	"reflect"
-	"time"
 
 	"github.com/mediocregopher/breadis/config"
 )

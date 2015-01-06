@@ -1,8 +1,9 @@
 package loc
 
 import (
-	log "github.com/grooveshark/golib/gslog"
 	"time"
+
+	log "github.com/grooveshark/golib/gslog"
 
 	"github.com/mediocregopher/breadis/config"
 )

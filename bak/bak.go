@@ -1,11 +1,12 @@
 package bak
 
 import (
+	"strings"
+
 	"github.com/fzzy/radix/extra/sentinel"
 	"github.com/fzzy/radix/redis"
 	"github.com/fzzy/radix/redis/resp"
 	log "github.com/grooveshark/golib/gslog"
-	"strings"
 
 	"github.com/mediocregopher/breadis/config"
 )
