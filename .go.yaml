@@ -1,14 +1,5 @@
 ---
 path: github.com/mediocregopher/breadis
 deps:
-    - loc: https://github.com/fzzy/radix.git
-      type: git
-      ref: v0.4.3
-      path: github.com/fzzy/radix
-
-    - loc: https://github.com/mediocregopher/flagconfig.git
-      type: git
-      ref: v0.4.2
-      path: github.com/mediocregopher/flagconfig
-
-    - loc: github.com/grooveshark/golib
+    - loc: github.com/fzzy/radix
+    - loc: github.com/mediocregopher/flagconfig

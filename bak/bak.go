@@ -1,58 +1,53 @@
 package bak
 
 import (
-	"strings"
-
-	"github.com/fzzy/radix/extra/sentinel"
-	"github.com/fzzy/radix/redis"
-	"github.com/fzzy/radix/redis/resp"
-	log "github.com/grooveshark/golib/gslog"
+	"errors"
+	"log"
 
 	"github.com/mediocregopher/breadis/config"
+	"github.com/mediocregopher/radix.v2/cluster"
+	"github.com/mediocregopher/radix.v2/redis"
 )
 
-type sentinelReq struct {
-	m  *resp.Message
-	ch chan *resp.Message
-}
-
+// errors
 var (
-	sentinelReqCh    = make(chan *sentinelReq)
-	sentinelClientCh = make(chan *sentinel.Client)
+	errBadCmd = errors.New("ERR bad command")
 )
+
+var c *cluster.Cluster
 
 func init() {
-	switch strings.ToLower(config.Mode) {
-	case "single":
-		singleinit()
-	case "multi":
-		multiinit()
-	default:
-		log.Fatalf("Unknown mode: %s", config.Mode)
+	var err error
+	for _, addr := range config.RedisAddrs {
+		if c, err = cluster.New(addr); err != nil {
+			log.Printf("%s: %s", addr, err)
+			continue
+		}
+
+		return
 	}
+	log.Fatal("no available redis cluster nodes")
 }
 
-func GetBucket(bucket string) (*redis.Client, error) {
-	return (<-sentinelClientCh).GetMaster(bucket)
-}
-
-func PutBucket(bucket string, conn *redis.Client) {
-	(<-sentinelClientCh).PutMaster(bucket, conn)
-}
-
-func sentinelDirect(conn *redis.Client, r *sentinelReq) {
-	if err := resp.WriteMessage(conn.Conn, r.m); err != nil {
-		log.Fatalf("sentinelConn write: %s", err)
+func Cmd(m *redis.Resp) *redis.Resp {
+	ms, err := m.Array()
+	if err != nil || len(ms) < 1 {
+		return redis.NewResp(errBadCmd)
 	}
-	rm, err := resp.ReadMessage(conn.Conn)
+
+	cmd, err := ms[0].Str()
 	if err != nil {
-		log.Fatalf("sentinelConn read: %s", err)
+		return redis.NewResp(errBadCmd)
 	}
-	r.ch <- rm
-}
 
-func SentinelDirectCmd(m *resp.Message) *resp.Message {
-	req := sentinelReq{m, make(chan *resp.Message)}
-	sentinelReqCh <- &req
-	return <-req.ch
+	args := make([]interface{}, 0, len(ms[1:]))
+	for _, argm := range ms[1:] {
+		arg, err := argm.Str()
+		if err != nil {
+			return redis.NewResp(errBadCmd)
+		}
+		args = append(args, arg)
+	}
+
+	return c.Cmd(cmd, args...)
 }
